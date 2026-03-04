@@ -1,11 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from app.models.lead import LeadRequest, LeadResponse
+from app.services.firestore import leads_collection, mobiles_collection
 
 router = APIRouter(prefix="/leads", tags=["leads"])
-
-# Temporary in-memory store until Firestore is wired
-MOCK_LEADS = []
 
 
 @router.post("", response_model=LeadResponse)
@@ -14,19 +12,41 @@ async def register_interest(payload: LeadRequest):
     Registers a user's interest in a specific mobile.
     """
     try:
-        # TODO: replace with Firestore write later
-        lead = {
-            "id": str(len(MOCK_LEADS) + 1),
+        # Check if mobile exists
+        mobile_doc = mobiles_collection.document(payload.mobile_id).get()
+        if not mobile_doc.exists:
+            raise HTTPException(status_code=404, detail="Mobile not found")
+
+        # Check if user already registered interest in this mobile
+        existing = leads_collection\
+            .where("user_id", "==", payload.user_id)\
+            .where("mobile_id", "==", payload.mobile_id)\
+            .get()
+
+        if len(existing) > 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Interest already registered for this mobile"
+            )
+
+        now = datetime.now(timezone.utc)
+        lead_data = {
             "user_id": payload.user_id,
             "mobile_id": payload.mobile_id,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": now,
         }
 
-        MOCK_LEADS.append(lead)
-        print(f"[LEADS] Interest registered: {lead}")
+        doc_ref = leads_collection.add(lead_data)
 
-        return LeadResponse(**lead)
+        return LeadResponse(
+            id=doc_ref[1].id,
+            user_id=payload.user_id,
+            mobile_id=payload.mobile_id,
+            timestamp=now,
+        )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -36,6 +56,16 @@ async def get_user_leads(user_id: str):
     """
     Returns all mobiles a user has registered interest in.
     """
-    # TODO: replace with Firestore query later
-    user_leads = [l for l in MOCK_LEADS if l["user_id"] == user_id]
-    return [LeadResponse(**l) for l in user_leads]
+    try:
+        docs = leads_collection.where("user_id", "==", user_id).stream()
+
+        leads = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            leads.append(LeadResponse(**data))
+
+        return leads
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

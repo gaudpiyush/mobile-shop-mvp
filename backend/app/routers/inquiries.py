@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
 from app.models.inquiry import InquiryRequest, InquiryResponse
+from app.services.firestore import inquiries_collection, mobiles_collection
 
 router = APIRouter(prefix="/inquiries", tags=["inquiries"])
 
@@ -14,21 +15,33 @@ async def post_inquiry(payload: InquiryRequest):
     Posts a question for the vendor about a specific mobile.
     """
     try:
-        # TODO: replace with Firestore write later
-        inquiry = {
-            "id": str(len(MOCK_INQUIRIES) + 1),
+        # Check if mobile exists
+        mobile_doc = mobiles_collection.document(payload.mobile_id).get()
+        if not mobile_doc.exists:
+            raise HTTPException(status_code=404, detail="Mobile not found")
+
+        now = datetime.now(timezone.utc)
+        inquiry_data = {
             "user_id": payload.user_id,
             "mobile_id": payload.mobile_id,
             "question_text": payload.question_text,
             "vendor_reply": None,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": now,
         }
 
-        MOCK_INQUIRIES.append(inquiry)
-        print(f"[INQUIRIES] Question posted: {inquiry}")
+        doc_ref = inquiries_collection.add(inquiry_data)
 
-        return InquiryResponse(**inquiry)
+        return InquiryResponse(
+            id=doc_ref[1].id,
+            user_id=payload.user_id,
+            mobile_id=payload.mobile_id,
+            question_text=payload.question_text,
+            vendor_reply=None,
+            timestamp=now,
+        )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -38,6 +51,19 @@ async def get_inquiries(mobile_id: str):
     """
     Returns all questions and vendor replies for a specific mobile.
     """
-    # TODO: replace with Firestore query later
-    mobile_inquiries = [i for i in MOCK_INQUIRIES if i["mobile_id"] == mobile_id]
-    return [InquiryResponse(**i) for i in mobile_inquiries]
+    try:
+        docs = inquiries_collection\
+            .where("mobile_id", "==", mobile_id)\
+            .order_by("timestamp")\
+            .stream()
+
+        inquiries = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            inquiries.append(InquiryResponse(**data))
+
+        return inquiries
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
