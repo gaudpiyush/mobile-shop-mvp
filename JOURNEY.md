@@ -1,6 +1,6 @@
 # Development Journey
 
-## Day 1 — Project Setup & Architecture Planning
+## Project Setup & Architecture Planning
 
 **Summary:** Understand requirements, finalize tech stack, scaffold project.
 

@@ -1,22 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from datetime import datetime, timezone
+from app.models.user import UserRegisterRequest, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class UserRegisterRequest(BaseModel):
-    uid: str
-    email: str
-    display_name: str
-    photo_url: str | None = None
-
-
-class UserResponse(BaseModel):
-    uid: str
-    email: str
-    display_name: str
-    message: str
 
 
 @router.post("/register-user", response_model=UserResponse)
@@ -41,7 +28,8 @@ async def register_user(payload: UserRegisterRequest):
             uid=payload.uid,
             email=payload.email,
             display_name=payload.display_name,
-            message="User registered successfully",
+            photo_url=payload.photo_url,
+            last_login=datetime.now(timezone.utc),
         )
 
     except Exception as e:
