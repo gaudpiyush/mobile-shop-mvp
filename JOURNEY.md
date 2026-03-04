@@ -28,10 +28,7 @@ Key decisions:
 
 ## Backend Routers
 
-Built all 4 routers with mock in-memory data first, Firestore will be 
-wired in next milestone. This way endpoints are testable immediately 
-via FastAPI's built-in Swagger UI at `/docs` without needing any 
-cloud setup.
+Built all 4 routers with mock in-memory data first, Firestore will be wired in next milestone. This way endpoints are testable immediately via FastAPI's built-in Swagger UI at `/docs` without needing any cloud setup.
 
 Endpoints built:
 - POST /auth/register-user
@@ -41,3 +38,16 @@ Endpoints built:
 - GET /leads/me/{user_id}
 - POST /inquiries
 - GET /inquiries/{mobile_id}
+
+## Firestore Integration
+
+Wired Firestore to all 4 routers, replacing mock in-memory data.
+
+Key decisions:
+- Filtering mobiles in memory after fetching instead of using Firestore queries — avoids needing composite indexes for every filter combination on the free tier
+- Added duplicate lead check before registering interest
+- Added mobile existence check in both leads and inquiries before writing
+
+**Issues faced:**
+- Inquiries endpoint was throwing 500 — Firestore requires a composite index when combining .where() and .order_by() on different fields. Fixed by creating the index directly from the error link Firebase provided.
+
