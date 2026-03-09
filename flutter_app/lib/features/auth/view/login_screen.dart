@@ -48,14 +48,11 @@ class LoginScreen extends ConsumerWidget {
                       onPressed: () {
                         ref.read(authStateProvider.notifier).signInWithGoogle();
                       },
-                      icon: Image.network(
-                        'https://developers.google.com/identity/images/g-logo.png',
-                        height: 20,
-                      ),
+                      icon: Image.asset('assets/g-logo.png', height: 20),
                       label: const Text('Continue with Google'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
+                          horizontal: 14, vertical: 14),
                         minimumSize: const Size(double.infinity, 50),
                       ),
                     ),
