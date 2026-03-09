@@ -1,41 +1,36 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../../auth/domain/user_model.dart';
+import '../domain/user_model.dart';
 import '../../../core/api_client.dart';
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb ? '206118713263-fiki5p4ot7nttngqs42eci1ljeoaftg9.apps.googleusercontent.com' : null,
+  );
 
-  // Sign in with Google → get Firebase token → register with backend
   Future<UserModel> signInWithGoogle() async {
-    // Step 1: Google Sign-In popup/flow
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) throw Exception('Sign-in cancelled');
+    if (kIsWeb) {
+      return await _signInWithGoogleWeb();
+    } else {
+      return await _signInWithGoogleAndroid();
+    }
+  }
 
-    // Step 2: Get auth credentials
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+  // Web uses Firebase's built-in popup flow
+  Future<UserModel> _signInWithGoogleWeb() async {
+    final GoogleAuthProvider googleProvider = GoogleAuthProvider();
 
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Step 3: Sign into Firebase
     final UserCredential userCredential =
-        await _firebaseAuth.signInWithCredential(credential);
+        await _firebaseAuth.signInWithPopup(googleProvider);
 
     final firebaseUser = userCredential.user!;
 
-    // Step 4: Get Firebase ID token for backend
-    final String idToken = await firebaseUser.getIdToken() ?? '';
+    final String? idToken = await firebaseUser.getIdToken();
+    if (idToken != null) ApiClient.setAuthToken(idToken);
 
-    // Step 5: Attach token to API client
-    ApiClient.setAuthToken(idToken);
-
-    // Step 6: Register/update user in our backend
-    await _registerUserInBackend(firebaseUser, idToken);
+    await _registerUserInBackend(firebaseUser);
 
     return UserModel(
       uid: firebaseUser.uid,
@@ -45,7 +40,38 @@ class AuthRepository {
     );
   }
 
-  Future<void> _registerUserInBackend(User user, String idToken) async {
+  // Android uses GoogleSignIn package flow
+  Future<UserModel> _signInWithGoogleAndroid() async {
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) throw Exception('Sign-in cancelled');
+
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final UserCredential userCredential =
+        await _firebaseAuth.signInWithCredential(credential);
+
+    final firebaseUser = userCredential.user!;
+
+    final String? idToken = await firebaseUser.getIdToken();
+    if (idToken != null) ApiClient.setAuthToken(idToken);
+
+    await _registerUserInBackend(firebaseUser);
+
+    return UserModel(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      displayName: firebaseUser.displayName ?? '',
+      photoUrl: firebaseUser.photoURL,
+    );
+  }
+
+  Future<void> _registerUserInBackend(User user) async {
     try {
       await ApiClient.instance.post(
         '/auth/register-user',
@@ -57,8 +83,7 @@ class AuthRepository {
         },
       );
     } catch (e) {
-      // Non-critical — user is still logged in locally
-      print('Backend registration error: $e');
+      print('[AUTH] Backend registration error: $e');
     }
   }
 

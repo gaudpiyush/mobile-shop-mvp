@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'core/theme.dart';
 import 'core/constants.dart';
 import 'features/auth/view/auth_provider.dart';
@@ -8,7 +10,9 @@ import 'features/catalog/view/catalog_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Firebase init will go here in Phase 5
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const ProviderScope(child: MyApp()));
 }
 
