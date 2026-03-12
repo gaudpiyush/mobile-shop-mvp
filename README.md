@@ -215,6 +215,36 @@ Screen → Provider → Repository → FastAPI → Firestore
 
 ---
 
-## Deployment (Pending)
+## Deployment
 
-Deployed on Render as GCP free tier billing was unavailable
+### Backend (Render)
+Backend is deployed on Render instead of Google Cloud Run due to GCP 
+billing setup being unavailable during development. Render supports 
+Docker deployments and has a forever free tier.
+
+Live API: https://mobile-shop-mvp.onrender.com/
+API Docs: https://mobile-shop-mvp.onrender.com/docs
+
+> **Note:** Backend is on Render free tier. First request may take 
+> 30-60 seconds if the service has been inactive.
+
+### Frontend (Firebase Hosting)
+Flutter Web is deployed on Firebase Hosting — served 24/7 via CDN.
+
+Live App: https://your-app.web.app
+
+### Deploying Yourself
+
+**Backend:**
+```bash
+# Render auto deploys from GitHub on every push to main
+# Just push your changes and Render handles the rest
+git push origin main
+```
+
+**Frontend:**
+```bash
+cd flutter_app
+flutter build web
+firebase deploy
+```
