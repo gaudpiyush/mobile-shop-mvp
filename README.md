@@ -32,8 +32,10 @@ mobile-shop-mvp/
 
 - Flutter SDK
 - Python 3.10+
+- Node.js and npm
 - Firebase project with Firestore and Google Auth enabled
 - `service-account.json` from Firebase project settings
+- Firebase CLI (`npm install -g firebase-tools`)
 
 ---
 
@@ -74,6 +76,26 @@ python seed.py
 ```bash
 cd flutter_app
 flutter pub get
+```
+
+#### Configure Firebase
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Activate FlutterFire CLI
+dart pub global activate flutterfire_cli
+
+# Add to PATH (Linux/Mac)
+export PATH="$PATH:$HOME/.pub-cache/bin"
+
+# Configure Firebase for the project
+dart pub global run flutterfire_cli:flutterfire configure
+# Select your Firebase project and choose android + web platforms
+# This generates lib/firebase_options.dart automatically
 ```
 
 #### Run on Web
