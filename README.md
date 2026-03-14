@@ -32,8 +32,10 @@ mobile-shop-mvp/
 
 - Flutter SDK
 - Python 3.10+
+- Node.js and npm
 - Firebase project with Firestore and Google Auth enabled
 - `service-account.json` from Firebase project settings
+- Firebase CLI (`npm install -g firebase-tools`)
 
 ---
 
@@ -74,6 +76,26 @@ python seed.py
 ```bash
 cd flutter_app
 flutter pub get
+```
+
+#### Configure Firebase
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Activate FlutterFire CLI
+dart pub global activate flutterfire_cli
+
+# Add to PATH (Linux/Mac)
+export PATH="$PATH:$HOME/.pub-cache/bin"
+
+# Configure Firebase for the project
+dart pub global run flutterfire_cli:flutterfire configure
+# Select your Firebase project and choose android + web platforms
+# This generates lib/firebase_options.dart automatically
 ```
 
 #### Run on Web
@@ -193,17 +215,34 @@ Screen → Provider → Repository → FastAPI → Firestore
 
 ---
 
-## Deployment (Pending)
+## Deployment
 
-GCP billing setup was blocked during development. Once resolved:
+### Backend (Render)
+Backend is deployed on Render instead of Google Cloud Run due to GCP 
+billing setup being unavailable during development. Render supports 
+Docker deployments and has a forever free tier.
 
-**Backend → Cloud Run:**
+Live API: https://mobile-shop-mvp.onrender.com/
+API Docs: https://mobile-shop-mvp.onrender.com/docs
+
+> **Note:** Backend is on Render free tier. First request may take 
+> 30-60 seconds if the service has been inactive.
+
+### Frontend (Firebase Hosting)
+Flutter Web is deployed on Firebase Hosting — served 24/7 via CDN.
+
+Live App: https://your-app.web.app
+
+### Deploying Yourself
+
+**Backend:**
 ```bash
-cd backend
-gcloud run deploy mobile-shop-api --source . --region us-central1
+# Render auto deploys from GitHub on every push to main
+# Just push your changes and Render handles the rest
+git push origin main
 ```
 
-**Flutter Web → Firebase Hosting:**
+**Frontend:**
 ```bash
 cd flutter_app
 flutter build web

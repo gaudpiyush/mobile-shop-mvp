@@ -6,7 +6,12 @@ app = FastAPI(title="Mobile Shop API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://mobile-shop-mvp-1e4fd.web.app",      # Firebase Hosting
+        "https://mobile-shop-mvp-1e4fd.firebaseapp.com", # Firebase Hosting alt
+        "http://localhost:8080",                         # Local Flutter Web
+        "http://localhost:52631",                        # Local Flutter Web alt port
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

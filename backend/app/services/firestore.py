@@ -6,7 +6,7 @@ load_dotenv()
 
 # Initialize Firestore client using service account
 db = firestore.Client.from_service_account_json(
-    os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or "/etc/secrets/service-account.json"
 )
 
 # Collection references — single place to manage collection names

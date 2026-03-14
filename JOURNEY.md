@@ -53,32 +53,25 @@ Key decisions:
 
 ## Flutter Frontend
 
-Built the entire Flutter frontend feature by feature following clean
-architecture — domain models, repositories, providers, screens.
+Built entire Flutter frontend following clean architecture — domain models,
+repositories, providers, screens for all 4 features.
 
 Key decisions:
 - Repositories handle all API calls, screens never talk to API directly
-- Riverpod FutureProvider.autoDispose for catalog so it refetches
-  automatically when filters change
+- Riverpod FutureProvider.autoDispose for catalog so it refetches automatically when filters change
 - Responsive grid on catalog screen — 1 column on mobile, 2 on wider screens
-- Register Interest button disables itself after registering to prevent
-  duplicate leads — state updated locally without refetching
+- Register Interest button disables itself after registering to prevent duplicate leads
 
 **Issues faced:**
 - Flutter Web Google Sign-In couldn't use GoogleSignIn package directly.
   Had to split auth into two flows — web uses Firebase's signInWithPopup,
-  Android uses GoogleSignIn package with credentials. This is the key
-  architectural difference between the two platforms.
+  Android uses GoogleSignIn package with credentials.
 - Google logo was loading from external URL which failed in Flutter Web.
-  Fixed by downloading the asset locally and registering it in pubspec.yaml.
-- lib/ folder was missing on Ubuntu after cloning because Python's default
-  gitignore (selected during GitHub repo creation) includes lib/. Fixed by
-  removing lib/ from root .gitignore and pushing again.
-- Flutter Web cannot reach 10.0.2.2 (Android emulator localhost). Fixed
-  by using kIsWeb to conditionally set baseUrl to localhost for web and
-  10.0.2.2 for Android.
-
----
+  Fixed by downloading the asset locally.
+- lib/ folder was missing after cloning because Python's default gitignore
+  includes lib/. Fixed by removing lib/ from root .gitignore.
+- Flutter Web cannot reach 10.0.2.2. Fixed by using kIsWeb to conditionally
+  set baseUrl to localhost for web and 10.0.2.2 for Android.
 
 ## Firebase Auth Integration
 
@@ -87,24 +80,25 @@ firebase_options.dart and registered both Android and Web apps in Firebase.
 
 Key decisions:
 - Used flutterfire configure to handle platform registration automatically
-  instead of manually downloading config files
 - Web Client ID must be explicitly passed to GoogleSignIn for web — sourced
   from Firebase Console → Authentication → Google → Web SDK configuration
+- firebase_options.dart is gitignored — must run flutterfire configure 
+  after cloning to regenerate it
 
----
+## Deployment
 
-## End to End Testing
+**Backend → Render**
+Originally planned to deploy on Google Cloud Run but was facing some issues in GCP free tier billing. Switched to Render as an alternative — supports Docker deployments, has a forever free tier,and requires no credit card.
 
-Tested all features end to end:
-- Google Sign-In working on web
-- Users being created in Firestore on first login
-- Mobiles catalog loading from Firestore
-- Search and filter working correctly
-- Mobile detail page showing specs
-- Register Interest writing to Firestore leads collection
-- Duplicate interest prevention working
-- Inquiries posting and loading correctly
+Key issue: service-account.json is gitignored and can't be pushed to 
+GitHub. Render's Secret Files feature solved this — it securely injects 
+the file at /etc/secrets/service-account.json at runtime.
 
-**Deployment:** GCP free tier billing setup was blocked during development.
-Cloud Run and Firebase Hosting deployment is pending. All features are
-fully functional locally.
+**Frontend → Firebase Hosting**
+Flutter Web build deployed to Firebase Hosting which serves static files
+24/7 via CDN. Render free tier spins down after 15 minutes of inactivity
+so first request after inactivity may take 30-60 seconds.
+
+URLs:
+- Backend: https://mobile-shop-mvp.onrender.com/
+- Frontend: https://mobile-shop-mvp-1e4fd.web.app/  
