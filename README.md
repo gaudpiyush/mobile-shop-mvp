@@ -231,7 +231,7 @@ API Docs: https://mobile-shop-mvp.onrender.com/docs
 ### Frontend (Firebase Hosting)
 Flutter Web is deployed on Firebase Hosting — served 24/7 via CDN.
 
-Live App: https://your-app.web.app
+Live App: https://mobile-shop-mvp-1e4fd.web.app/
 
 ### Deploying Yourself
 
